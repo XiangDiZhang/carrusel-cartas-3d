@@ -19,10 +19,13 @@
 </header>
     <div class="stage-wrap">
   <div class="stage" id="stage">
-    <div class="card" id="card" data-holo="arcoiris">
+    <div class="card" id="card" data-holo="arcoiris" data-relieve="no">
       <div class="face front">
         <div class="placeholder" id="placeholder"><div class="glyph"><svg class="ico" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" fill="currentColor"><path d="M228,128a12,12,0,0,1-12,12H140v76a12,12,0,0,1-24,0V140H40a12,12,0,0,1,0-24h76V40a12,12,0,0,1,24,0v76h76A12,12,0,0,1,228,128Z"/></svg></div><span>Cargando cartas…</span></div>
         <img id="frontImg" style="display:none;" alt="Anverso">
+        <!-- relieve: la propia imagen hace de mapa de alturas y se ilumina según la inclinación (filtros del final) -->
+        <img class="relief relief-shade" id="reliefShade" alt="" aria-hidden="true">
+        <img class="relief relief-shine" id="reliefShine" alt="" aria-hidden="true">
         <!-- el brillo va dentro del anverso: al girar, el reverso se ve sin holo -->
         <div class="holo" id="holo"></div>
         <div class="glare"></div>
@@ -50,6 +53,12 @@
     <button data-holo="galaxia" aria-pressed="false">Galaxia</button>
     <button data-holo="aurora" aria-pressed="false">Aurora</button>
     <button data-holo="ninguno" aria-pressed="false">Sin brillo</button>
+  </div>
+  <p class="picker-label">Relieve</p>
+  <div class="holo-picker" id="reliefPicker">
+    <button data-relieve="no" aria-pressed="true">Sin relieve</button>
+    <button data-relieve="suave" aria-pressed="false">Suave</button>
+    <button data-relieve="marcado" aria-pressed="false">Marcado</button>
   </div>
   <div class="int-row">
     <label for="intRange">Intensidad</label>
@@ -108,6 +117,28 @@
     <footer>Las cartas normales llevan el reverso azul y los líderes el rojo. Si quieres otro reverso, pulsa el icono de flecha circular en la miniatura.</footer>
   </aside>
 </div>
+
+<!-- Filtros del relieve: la luminosidad de la carta pasa a ser la altura (claro = sube) y se ilumina con una luz
+     lejana cuya dirección mueve js/app.js. Sombra: luz difusa (gris medio en lo plano, para mezclar en overlay).
+     Brillo: luz especular, solo los destellos de las aristas. -->
+<svg class="svg-defs" width="0" height="0" aria-hidden="true" focusable="false">
+  <defs>
+    <filter id="fRelieveSombra" x="0" y="0" width="1" height="1" color-interpolation-filters="sRGB">
+      <feColorMatrix in="SourceGraphic" type="luminanceToAlpha" result="altura"/>
+      <feGaussianBlur in="altura" stdDeviation="0.9" result="alturaSuave"/>
+      <feDiffuseLighting in="alturaSuave" surfaceScale="3" diffuseConstant="0.71" lighting-color="#ffffff">
+        <feDistantLight class="relief-light" azimuth="225" elevation="45"/>
+      </feDiffuseLighting>
+    </filter>
+    <filter id="fRelieveBrillo" x="0" y="0" width="1" height="1" color-interpolation-filters="sRGB">
+      <feColorMatrix in="SourceGraphic" type="luminanceToAlpha" result="altura"/>
+      <feGaussianBlur in="altura" stdDeviation="0.9" result="alturaSuave"/>
+      <feSpecularLighting in="alturaSuave" surfaceScale="3" specularConstant="1.2" specularExponent="60" lighting-color="#ffffff">
+        <feDistantLight class="relief-light" azimuth="225" elevation="45"/>
+      </feSpecularLighting>
+    </filter>
+  </defs>
+</svg>
 
 <script src="js/consulta.js"></script>
 <script src="js/app.js" id="app"></script>

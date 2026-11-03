@@ -202,6 +202,8 @@
     if(!c){ placeholder.style.display='flex'; frontImg.style.display='none'; return; }
     placeholder.style.display='none';
     frontImg.src = c.front; frontImg.style.display='block';
+    // las capas del relieve usan la misma imagen (ya descargada)
+    reliefShade.src = reliefShine.src = c.front;
     // se adelanta la descarga de la siguiente para que la vuelta no se quede en blanco
     const next = cards[(i+1) % cards.length];
     if(next && next !== c) new Image().src = next.front;
@@ -224,7 +226,38 @@
     card.style.setProperty('--gy', gy.toFixed(1)+'%');
     card.style.setProperty('--hi', hi.toFixed(2));
     card.style.setProperty('--hr', (ry*6).toFixed(1));
+    setReliefLight(rx, ry);
   }
+
+  // ---- Relieve ----
+  // la luz llega de arriba a la izquierda y gira y se inclina con la carta: así los relieves brillan y hacen sombra al moverse
+  const RELIEF_SCALE = {no: 0, suave: 2.5, marcado: 6};
+  const reliefShade = document.getElementById('reliefShade');
+  const reliefShine = document.getElementById('reliefShine');
+  const reliefLights = document.querySelectorAll('.relief-light');
+  let reliefOn = false, lastAz = null, lastEl = null;
+  function setReliefLight(rx, ry){
+    if(!reliefOn) return;
+    const az = 225 + ry*5 - rx*4;
+    const el = Math.max(25, Math.min(65, 45 + rx*2 - Math.abs(ry)*0.6));
+    // los filtros de luz son caros: solo se recalculan si la luz cambia de verdad
+    if(lastAz !== null && Math.abs(az - lastAz) < 0.4 && Math.abs(el - lastEl) < 0.4) return;
+    lastAz = az; lastEl = el;
+    reliefLights.forEach(l=>{ l.setAttribute('azimuth', az.toFixed(1)); l.setAttribute('elevation', el.toFixed(1)); });
+  }
+  function setRelief(name){
+    if(!(name in RELIEF_SCALE)) name = 'no';
+    card.dataset.relieve = name;
+    reliefOn = name !== 'no';
+    document.querySelectorAll('#reliefPicker button').forEach(x=>x.setAttribute('aria-pressed', x.dataset.relieve===name?'true':'false'));
+    document.querySelectorAll('#fRelieveSombra feDiffuseLighting, #fRelieveBrillo feSpecularLighting')
+      .forEach(f=>f.setAttribute('surfaceScale', RELIEF_SCALE[name]));
+    lastAz = null;
+  }
+  document.getElementById('reliefPicker').addEventListener('click', e=>{
+    const b = e.target.closest('button'); if(!b) return;
+    setRelief(b.dataset.relieve);
+  });
 
   document.getElementById('holoPicker').addEventListener('click', e=>{
     const b = e.target.closest('button'); if(!b) return;
@@ -355,7 +388,7 @@
   const obsLink = document.getElementById('obsLink');
   const isDefaultBack = b => !b || b === BACK_NORMAL || b === BACK_LEADER || Object.values(GAME_BACKS).includes(b);
   function obsUrl(){
-    const p = new URLSearchParams({obs: '1', juego: game, exp: activeSet, n: String(limit), brillo: card.dataset.holo, int: intRange.value, moneda: currency});
+    const p = new URLSearchParams({obs: '1', juego: game, exp: activeSet, n: String(limit), brillo: card.dataset.holo, relieve: card.dataset.relieve, int: intRange.value, moneda: currency});
     return location.origin + location.pathname + '?' + p;
   }
   obsBtn.addEventListener('click', async ()=>{
@@ -554,6 +587,7 @@
     if(PARAMS.get('moneda') === 'USD') currency = 'USD';
     const n = Number(PARAMS.get('n')); if(n >= 1) limit = Math.min(MAX_CARDS, Math.round(n));
     if(PARAMS.has('brillo')) setHolo(PARAMS.get('brillo'));
+    if(PARAMS.has('relieve')) setRelief(PARAMS.get('relieve'));
     if(PARAMS.has('int')) setIntensity(Math.max(0, Math.min(300, Number(PARAMS.get('int')) || 0)));
     gameSelect.value = g;
     // si la expansión del enlace ya no existe, se abre la más reciente

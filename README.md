@@ -41,6 +41,10 @@ El botón «Enlace para OBS» crea y copia un enlace a esta misma página con la
 `https://xiangdizhang.github.io/carrusel-cartas-3d/?obs=1&juego=pkm&exp=24722&n=5&brillo=oro&int=35&moneda=USD`
 
 - `obs=1`: solo la carta y su precio, con fondo transparente.
-- `juego` (`op` o `pkm`), `exp` (código de la expansión), `n` (1 a 50 cartas), `brillo`, `int` (0 a 300) y `moneda` (`EUR` o `USD`).
+- `juego` (`op` o `pkm`), `exp` (código de la expansión), `n` (1 a 50 cartas), `brillo`, `relieve` (`no`, `suave` o `marcado`), `int` (0 a 300) y `moneda` (`EUR` o `USD`).
+
+## Relieve
+
+Simula el relieve de los foils texturizados: la luminosidad de la imagen hace de mapa de alturas (claro = sube) y dos filtros de luz SVG (difusa para el volumen, especular para los destellos de las aristas) se iluminan con una luz que gira con la inclinación de la carta. Es una simulación a partir del dibujo: nadie publica la textura real de cada carta.
 
 En OBS: Fuente → Navegador → pegar el enlace en «URL». Los datos se consultan cada vez que OBS carga la fuente, y la página se recarga sola cada 6 horas. Si la expansión del enlace deja de existir, se abre la más reciente. Los reversos cambiados a mano no viajan en el enlace.
