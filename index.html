@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Carrusel de cartas 3D</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/estilos.css">
+</head>
+<body>
+
+<div class="layout">
+  <main class="main">
+    <header>
+  <h1>Carrusel de cartas 3D</h1>
+  <p class="sub">Sube todas las cartas que quieras. Cada una flota un rato, da la vuelta enseñando su reverso y pasa a la siguiente.</p>
+</header>
+    <div class="stage-wrap">
+  <div class="stage" id="stage">
+    <div class="card" id="card" data-holo="arcoiris">
+      <div class="face front">
+        <div class="placeholder" id="placeholder"><div class="glyph"><svg class="ico" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" fill="currentColor"><path d="M228,128a12,12,0,0,1-12,12H140v76a12,12,0,0,1-24,0V140H40a12,12,0,0,1,0-24h76V40a12,12,0,0,1,24,0v76h76A12,12,0,0,1,228,128Z"/></svg></div><span>Sin cartas</span></div>
+        <img id="frontImg" style="display:none;" alt="Anverso">
+        <!-- el brillo va dentro del anverso: al girar, el reverso se ve sin holo -->
+        <div class="holo" id="holo"></div>
+        <div class="glare"></div>
+      </div>
+      <div class="face back">
+        <div class="back-pattern" id="backPattern"><span>?</span></div>
+        <img id="backImg" style="display:none;" alt="Reverso">
+      </div>
+    </div>
+    <div class="price-tag" id="priceTag" hidden><span class="pt-label">Precio medio</span><span class="pt-value" id="priceVal"></span></div>
+  </div>
+
+  <div class="controls">
+    <button id="playBtn" class="primary" disabled>Pausar</button>
+  </div>
+  <p class="picker-label">Tipo de brillo</p>
+  <div class="holo-picker" id="holoPicker">
+    <button data-holo="original" aria-pressed="false">Original</button>
+    <button data-holo="arcoiris" aria-pressed="true">Arcoíris</button>
+    <button data-holo="purpurina" aria-pressed="false">Purpurina</button>
+    <button data-holo="oro" aria-pressed="false">Oro</button>
+    <button data-holo="plata" aria-pressed="false">Plata</button>
+    <button data-holo="prisma" aria-pressed="false">Prisma</button>
+    <button data-holo="grabado" aria-pressed="false">Grabado</button>
+    <button data-holo="galaxia" aria-pressed="false">Galaxia</button>
+    <button data-holo="aurora" aria-pressed="false">Aurora</button>
+    <button data-holo="ninguno" aria-pressed="false">Sin brillo</button>
+  </div>
+  <div class="int-row">
+    <label for="intRange">Intensidad</label>
+    <input type="range" id="intRange" min="0" max="300" step="5" value="35">
+    <output id="intVal" for="intRange">35%</output>
+  </div>
+  <div class="obs-row">
+    <button id="obsBtn" disabled>Exportar para OBS</button>
+    <p class="obs-note" id="obsNote">Descarga un archivo con tus cartas, el brillo y la intensidad actuales. En OBS: Fuente → Navegador → marca "Archivo local" y elige el archivo.</p>
+  </div>
+  <p class="hint">En pausa puedes arrastrar la carta con el dedo o el ratón para inclinarla tú.</p>
+</div>
+  </main>
+  <aside class="sidebar">
+    <h2 class="side-title">Mis cartas <span id="deckCount"></span></h2>
+    <div class="set-picker">
+      <label for="gameSelect">Juego</label>
+      <select id="gameSelect">
+        <option value="op" selected>One Piece</option>
+        <option value="pkm">Pokémon</option>
+      </select>
+      <label for="setSelect">Cartas más caras por expansión</label>
+      <select id="setSelect"><option value="">Mis cartas subidas</option></select>
+      <p class="set-status" id="setStatus"></p>
+    </div>
+    <div class="deck-panel">
+  <div class="add-row">
+    <label class="btn primary" for="inputNormal">+ Cartas normales</label>
+    <input type="file" id="inputNormal" accept="image/*" multiple>
+    <label class="btn leader" for="inputLeader">+ Líderes</label>
+    <input type="file" id="inputLeader" accept="image/*" multiple>
+  </div>
+  <div class="sel-bar" id="selBar"></div>
+  <div class="view-opts" id="viewOpts">
+    <div class="opt-row">
+      <span class="opt-label" id="curLabel">Moneda</span>
+      <div class="seg" id="curSeg" role="group" aria-labelledby="curLabel">
+        <button type="button" data-cur="EUR" aria-pressed="true">€ Euros</button>
+        <button type="button" data-cur="USD" aria-pressed="false">$ Dólares</button>
+      </div>
+    </div>
+    <div class="opt-row">
+      <label class="opt-label" for="limitSelect">Cartas por expansión</label>
+      <div class="limit-row">
+        <select id="limitSelect">
+          <option value="10" selected>Top 10</option>
+          <option value="20">Top 20</option>
+          <option value="30">Top 30</option>
+          <option value="50">Top 50</option>
+          <option value="custom">Personalizado</option>
+        </select>
+        <input type="number" id="limitCustom" min="1" max="50" step="1" value="15" inputmode="numeric" aria-label="Número de cartas" hidden>
+      </div>
+      <p class="opt-hint" id="limitHint" hidden>Escribe de 1 a 50 y pulsa Intro.</p>
+    </div>
+  </div>
+  <input type="file" id="bulkBackInput" accept="image/*">
+  <div class="thumbs" id="thumbs"></div>
+  <p class="empty-hint" id="emptyHint">Aún no has añadido ninguna carta.</p>
+</div>
+    <footer>Las cartas normales llevan el reverso azul y los líderes el rojo. Si quieres otro reverso, pulsa el icono de flecha circular en la miniatura.</footer>
+  </aside>
+</div>
+
+<script src="js/consulta.js"></script>
+<script src="js/app.js" id="app"></script>
+</body>
+</html>
