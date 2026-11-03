@@ -49,9 +49,9 @@ function CartasTcgdex($nombreGrupo){
   $id = $tcgdexSets[(& $normal $nombreGrupo)]
   if(-not $id){ return $null }
   $mapa = @{}
-  try { foreach($c in (Pedir "https://api.tcgdex.net/v2/en/sets/$id").cards){ $mapa[(& $numero $c.localId)] = $c.id } }
-  catch { return $null }
-  return $mapa
+  try { $set = Pedir "https://api.tcgdex.net/v2/en/sets/$id" } catch { return $null }
+  foreach($c in $set.cards){ $mapa[(& $numero $c.localId)] = $c.id }
+  return @{ cartas = $mapa; salida = $set.releaseDate }
 }
 
 foreach($juego in $JUEGOS.Keys){
@@ -81,17 +81,33 @@ foreach($juego in $JUEGOS.Keys){
         [pscustomobject]$c
       } | Sort-Object v -Descending | Select-Object -First $maxCartas)
     if(-not $cartas.Count){ continue }
+    $salidaSet = [DateTime]$g.publishedOn
+    $fiable = $juego -ne 'pkm'
     if($juego -eq 'pkm'){
-      $mapa = CartasTcgdex $g.name
-      if($mapa){ foreach($c in $cartas){ $t = $mapa[(& $numero $c.id)]; if($t){ $c | Add-Member -NotePropertyName t -NotePropertyValue $t } } }
+      $td = CartasTcgdex $g.name
+      if($td){
+        foreach($c in $cartas){ $t = $td.cartas[(& $numero $c.id)]; if($t){ $c | Add-Member -NotePropertyName t -NotePropertyValue $t } }
+        # TCGplayer pone fechas de 2026 a expansiones antiguas: si TCGdex la conoce, manda su fecha de salida
+        if($td.salida){ $salidaSet = [DateTime]$td.salida; $fiable = $true }
+      }
     }
     Guardar (Join-Path $salida "$juego/$($g.groupId).json") @{ cartas = $cartas }
     # si el nombre ya lleva su código («SV08: Surging Sparks») no se repite
     $etiqueta = if($g.abbreviation -and $g.name -notmatch ":"){ "$($g.abbreviation): $($g.name)" } else { $g.name }
-    [void]$lista.Add([ordered]@{ code = [string]$g.groupId; label = $etiqueta; year = ([DateTime]$g.publishedOn).Year })
+    [void]$lista.Add([pscustomobject][ordered]@{ code = [string]$g.groupId; label = $etiqueta; year = $salidaSet.Year; fecha = $salidaSet; grupo = [int]$g.groupId; fiable = $fiable })
     Write-Host "$juego $($g.groupId) $etiqueta ($($cartas.Count))"
   }
-  Guardar (Join-Path $salida "$juego.json") @{ expansiones = $lista }
+  # las que TCGdex no conoce toman la fecha de la emparejada con el groupId más cercano (TCGplayer las creó a la vez),
+  # si esa es de más de un año antes (las recién salidas que TCGdex aún no tiene se quedan con su fecha)
+  $buenas = @($lista | Where-Object fiable)
+  if($buenas.Count){
+    foreach($e in @($lista | Where-Object { -not $_.fiable })){
+      $cerca = $buenas | Sort-Object { [math]::Abs($_.grupo - $e.grupo) } | Select-Object -First 1
+      if($cerca.fecha -lt $e.fecha.AddYears(-1)){ $e.fecha = $cerca.fecha; $e.year = $cerca.fecha.Year }
+    }
+  }
+  $orden = @($lista | Sort-Object fecha -Descending | ForEach-Object { [ordered]@{ code = $_.code; label = $_.label; year = $_.year } })
+  Guardar (Join-Path $salida "$juego.json") @{ expansiones = $orden }
 }
 Guardar (Join-Path $salida 'info.json') @{ fecha = $fecha }
 Write-Host "Listo: precios de TCGCSV del $fecha"
