@@ -25,7 +25,10 @@
         <img id="frontImg" style="display:none;" alt="Anverso">
         <!-- relieve: la propia imagen hace de mapa de alturas y se ilumina según la inclinación (filtros del final) -->
         <img class="relief relief-shade" id="reliefShade" alt="" aria-hidden="true">
-        <img class="relief relief-shine" id="reliefShine" alt="" aria-hidden="true">
+        <div class="relief-foil">
+          <img class="relief relief-shine" id="reliefShine" alt="" aria-hidden="true">
+          <div class="holo relief-holo"></div>
+        </div>
         <!-- el brillo va dentro del anverso: al girar, el reverso se ve sin holo -->
         <div class="holo" id="holo"></div>
         <div class="glare"></div>
@@ -123,6 +126,10 @@
      Brillo: luz especular, solo los destellos de las aristas. -->
 <svg class="svg-defs" width="0" height="0" aria-hidden="true" focusable="false">
   <defs>
+    <!-- enfoque suave: las imágenes de las fuentes no pasan de 600-730 px de ancho y al agrandarlas se ven blandas -->
+    <filter id="fEnfoque" x="0" y="0" width="1" height="1" color-interpolation-filters="sRGB">
+      <feConvolveMatrix order="3" preserveAlpha="true" kernelMatrix="0 -0.3 0  -0.3 2.2 -0.3  0 -0.3 0"/>
+    </filter>
     <filter id="fRelieveSombra" x="0" y="0" width="1" height="1" color-interpolation-filters="sRGB">
       <feColorMatrix in="SourceGraphic" type="luminanceToAlpha" result="altura"/>
       <feGaussianBlur in="altura" stdDeviation="0.9" result="alturaSuave"/>

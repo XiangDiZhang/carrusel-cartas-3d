@@ -45,6 +45,22 @@ $tcgdexSets = @{}
 try { foreach($s in (Pedir 'https://api.tcgdex.net/v2/en/sets')){ $tcgdexSets[(& $normal $s.name)] = $s.id } }
 catch { Write-Host "TCGdex no responde: Pokémon irá solo con TCGplayer" }
 $numero = { param($s) ($s.Split('/')[0].Trim().ToUpper()) -replace '^0+(?=\d)', '' }
+
+# Pokémon: imágenes más grandes (733 × 1024) en pokemontcg.io; TCGplayer no da más de 600 × 838.
+# Emparejado estricto (solo se quita un código en mayúsculas delante, «SV08: »), porque aquí no hay forma de comprobarlo.
+$normalEstricto = { param($s) ($s -creplace '^[A-Z0-9 -]+:\s*', '').ToLower() -replace '[^a-z0-9]', '' }
+$ptcgSets = @{}
+try { foreach($s in (Pedir 'https://api.pokemontcg.io/v2/sets?pageSize=250&select=id,name').data){ $ptcgSets[(& $normalEstricto $s.name)] = $s.id } }
+catch { Write-Host "pokemontcg.io no responde: Pokémon irá con las imágenes de TCGplayer" }
+# pokemontcg.io devuelve una imagen de relleno (con 404) si no existe, y no siempre numera igual que TCGplayer:
+# solo se usa su imagen si la carta con ese número tiene el mismo nombre que en TCGplayer
+$nombreCarta = { param($s) (($s -split ' - ')[0] -replace '\([^)]*\)', '').ToLower() -replace '[^a-z0-9]', '' }
+function CartasPtcg($setId){
+  $mapa = @{}
+  try { foreach($c in (Pedir "https://api.pokemontcg.io/v2/cards?q=set.id:$setId&pageSize=250&select=name,number").data){ $mapa[(& $numero $c.number)] = $c } }
+  catch { return $null }
+  return $mapa
+}
 function CartasTcgdex($nombreGrupo){
   $id = $tcgdexSets[(& $normal $nombreGrupo)]
   if(-not $id){ return $null }
@@ -91,6 +107,15 @@ foreach($juego in $JUEGOS.Keys){
         foreach($c in $cartas){ $t = $td.cartas[(& $numero $c.id)]; if($t){ $c | Add-Member -NotePropertyName t -NotePropertyValue $t } }
         # TCGplayer pone fechas de 2026 a expansiones antiguas: si TCGdex la conoce, manda su fecha de salida
         if($td.salida){ $salidaSet = [DateTime]$td.salida; $fiable = $true }
+      }
+      $ps = $ptcgSets[(& $normalEstricto $g.name)]
+      $pm = if($ps){ CartasPtcg $ps } else { $null }
+      if($pm){
+        foreach($c in $cartas){
+          $o = $pm[(& $numero $c.id)]
+          # s = ruta de la imagen en images.pokemontcg.io («sv8/238»)
+          if($o -and (& $nombreCarta $o.name) -eq (& $nombreCarta $c.n)){ $c | Add-Member -NotePropertyName s -NotePropertyValue "$ps/$($o.number)" }
+        }
       }
     }
     # si el nombre ya lleva su código («SV08: Surging Sparks») no se repite

@@ -68,20 +68,28 @@ body.obs .price-tag{font-size:3.4vh;}
 .face img.relief{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;pointer-events:none;display:none;}
 .card[data-relieve="suave"] .face img.relief,.card[data-relieve="marcado"] .face img.relief{display:block;}
 .relief-shade{filter:url(#fRelieveSombra);mix-blend-mode:overlay;}
-.relief-shine{filter:url(#fRelieveBrillo);mix-blend-mode:screen;opacity:0.6;}
-.card[data-relieve="marcado"] .relief-shine{opacity:0.85;}
+/* foil del relieve: los destellos de las aristas (blanco sobre negro) teñidos con los colores del brillo elegido
+   (multiply) y sumados a la carta (screen). Así el color del foil aparece donde la superficie sube y mira a la luz. */
+.relief-foil{position:absolute;inset:0;pointer-events:none;isolation:isolate;mix-blend-mode:screen;display:none;opacity:0.7;}
+.card[data-relieve="suave"] .relief-foil,.card[data-relieve="marcado"] .relief-foil{display:block;}
+.card[data-relieve="marcado"] .relief-foil{opacity:0.95;}
+.relief-foil .relief-holo{mix-blend-mode:multiply !important;opacity:1 !important;z-index:auto;}
 .svg-defs{position:absolute;width:0;height:0;overflow:hidden;}
-.card{--hx:50%;--hy:50%;--gx:50%;--gy:50%;--hi:0.3;--hr:0;--int:0.35;}
+#frontImg{filter:url(#fEnfoque);}
+.card{--hx:50%;--hy:50%;--gx:50%;--gy:50%;--hi:0.3;--hr:0;--int:0.35;--int-holo:var(--int);}
+/* con relieve, el brillo plano baja: el color del foil se lo llevan las aristas en relieve (.relief-foil) */
+.card[data-relieve="suave"]{--int-holo:calc(var(--int) * 0.6);}
+.card[data-relieve="marcado"]{--int-holo:calc(var(--int) * 0.4);}
 
 /* Original */
-.card[data-holo="original"] .holo{mix-blend-mode:color-dodge;opacity:calc((0.4) * var(--int));
+.card[data-holo="original"] .holo{mix-blend-mode:color-dodge;opacity:calc((0.4) * var(--int-holo));
   background:linear-gradient(115deg,transparent 20%,rgba(217,178,92,0.5) 36%,
   rgba(120,200,255,0.45) 44%,rgba(255,150,220,0.45) 52%,transparent 68%);
   background-size:250% 250%;background-position:var(--hx) var(--hy);}
 .card[data-holo="original"] .glare{display:none;}
 
 /* Arcoíris */
-.card[data-holo="arcoiris"] .holo{mix-blend-mode:color-dodge;opacity:calc((0.09 + var(--hi)*0.12) * var(--int));
+.card[data-holo="arcoiris"] .holo{mix-blend-mode:color-dodge;opacity:calc((0.09 + var(--hi)*0.12) * var(--int-holo));
   background:repeating-linear-gradient(115deg,
     hsl(0 90% 65%) 0%, hsl(45 95% 65%) 5%, hsl(110 85% 62%) 10%,
     hsl(190 90% 65%) 15%, hsl(265 85% 70%) 20%, hsl(330 90% 68%) 25%, hsl(0 90% 65%) 30%);
@@ -90,7 +98,7 @@ body.obs .price-tag{font-size:3.4vh;}
   background:radial-gradient(circle at var(--gx) var(--gy),rgba(255,255,255,0.75) 0%,rgba(255,255,255,0.15) 28%,transparent 55%);}
 
 /* Purpurina */
-.card[data-holo="purpurina"] .holo{mix-blend-mode:color-dodge;opacity:calc((0.08 + var(--hi)*0.18) * var(--int));
+.card[data-holo="purpurina"] .holo{mix-blend-mode:color-dodge;opacity:calc((0.08 + var(--hi)*0.18) * var(--int-holo));
   background-image:
     radial-gradient(circle,rgba(255,255,255,0.95) 0 0.8px,transparent 1.6px),
     radial-gradient(circle,rgba(255,225,150,0.9) 0 0.7px,transparent 1.4px),
@@ -102,28 +110,28 @@ body.obs .price-tag{font-size:3.4vh;}
   background:radial-gradient(circle at var(--gx) var(--gy),rgba(255,255,255,0.8),transparent 50%);}
 
 /* Oro */
-.card[data-holo="oro"] .holo{mix-blend-mode:color-dodge;opacity:calc((0.1 + var(--hi)*0.12) * var(--int));
+.card[data-holo="oro"] .holo{mix-blend-mode:color-dodge;opacity:calc((0.1 + var(--hi)*0.12) * var(--int-holo));
   background:linear-gradient(115deg,transparent 18%,#7a5a1c 30%,#f3d98a 42%,#fff4cf 48%,#d9a93f 56%,#6b4c14 68%,transparent 80%);
   background-size:260% 260%;background-position:var(--hx) var(--hy);}
 .card[data-holo="oro"] .glare{mix-blend-mode:overlay;opacity:calc((0.23) * var(--int));
   background:radial-gradient(ellipse at var(--gx) var(--gy),rgba(255,240,200,0.8),transparent 50%);}
 
 /* Plata: cromo frío y limpio */
-.card[data-holo="plata"] .holo{mix-blend-mode:soft-light;opacity:calc((0.25 + var(--hi)*0.2) * var(--int));
+.card[data-holo="plata"] .holo{mix-blend-mode:soft-light;opacity:calc((0.25 + var(--hi)*0.2) * var(--int-holo));
   background:linear-gradient(110deg,#3a3f4a 10%,#e9eef5 30%,#9aa3b2 42%,#ffffff 50%,#8a93a3 60%,#dfe6ef 72%,#3a3f4a 90%);
   background-size:280% 280%;background-position:var(--hx) var(--hy);}
 .card[data-holo="plata"] .glare{mix-blend-mode:overlay;opacity:calc((0.3) * var(--int));
   background:radial-gradient(ellipse 60% 40% at var(--gx) var(--gy),rgba(255,255,255,0.9),transparent 60%);}
 
 /* Prisma: arcoíris circular que gira con la carta */
-.card[data-holo="prisma"] .holo{mix-blend-mode:color-dodge;opacity:calc((0.1 + var(--hi)*0.14) * var(--int));
+.card[data-holo="prisma"] .holo{mix-blend-mode:color-dodge;opacity:calc((0.1 + var(--hi)*0.14) * var(--int-holo));
   background:conic-gradient(from calc(var(--hr) * 1deg) at var(--gx) var(--gy),
     hsl(0 90% 65%),hsl(60 95% 65%),hsl(130 85% 62%),hsl(190 90% 65%),hsl(250 85% 70%),hsl(310 90% 68%),hsl(360 90% 65%));}
 .card[data-holo="prisma"] .glare{mix-blend-mode:overlay;opacity:calc((0.22) * var(--int));
   background:radial-gradient(circle at var(--gx) var(--gy),rgba(255,255,255,0.7),transparent 45%);}
 
 /* Grabado: líneas finas de colores, como las cartas con textura */
-.card[data-holo="grabado"] .holo{mix-blend-mode:color-dodge;opacity:calc((0.1 + var(--hi)*0.16) * var(--int));
+.card[data-holo="grabado"] .holo{mix-blend-mode:color-dodge;opacity:calc((0.1 + var(--hi)*0.16) * var(--int-holo));
   background-image:
     repeating-linear-gradient(45deg,rgba(255,255,255,0.55) 0 1px,transparent 1px 5px),
     linear-gradient(115deg,transparent 15%,hsl(200 90% 65% / .7) 35%,hsl(290 85% 70% / .7) 50%,hsl(45 95% 65% / .7) 65%,transparent 85%);
@@ -132,7 +140,7 @@ body.obs .price-tag{font-size:3.4vh;}
   background:radial-gradient(circle at var(--gx) var(--gy),rgba(255,255,255,0.8),transparent 50%);}
 
 /* Galaxia: tonos violeta y estrellas */
-.card[data-holo="galaxia"] .holo{mix-blend-mode:color-dodge;opacity:calc((0.1 + var(--hi)*0.16) * var(--int));
+.card[data-holo="galaxia"] .holo{mix-blend-mode:color-dodge;opacity:calc((0.1 + var(--hi)*0.16) * var(--int-holo));
   background-image:
     radial-gradient(circle,rgba(255,255,255,0.95) 0 0.7px,transparent 1.4px),
     radial-gradient(circle,rgba(200,180,255,0.9) 0 1px,transparent 1.8px),
@@ -145,7 +153,7 @@ body.obs .price-tag{font-size:3.4vh;}
   background:radial-gradient(circle at var(--gx) var(--gy),rgba(230,220,255,0.8),transparent 50%);}
 
 /* Aurora: ondas suaves verde, cian y violeta */
-.card[data-holo="aurora"] .holo{mix-blend-mode:color-dodge;opacity:calc((0.1 + var(--hi)*0.14) * var(--int));
+.card[data-holo="aurora"] .holo{mix-blend-mode:color-dodge;opacity:calc((0.1 + var(--hi)*0.14) * var(--int-holo));
   background:linear-gradient(160deg,transparent 10%,hsl(150 80% 55% / .8) 30%,hsl(185 90% 60% / .8) 45%,hsl(270 80% 65% / .8) 60%,hsl(150 80% 55% / .8) 75%,transparent 92%);
   background-size:300% 300%;background-position:var(--hy) var(--hx);filter:blur(2px);}
 .card[data-holo="aurora"] .glare{mix-blend-mode:soft-light;opacity:calc((0.25) * var(--int));

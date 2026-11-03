@@ -201,12 +201,18 @@
     const c = cards[i];
     if(!c){ placeholder.style.display='flex'; frontImg.style.display='none'; return; }
     placeholder.style.display='none';
+    // si la imagen grande no existe, se pasa a la de respaldo (y se queda para siempre)
+    frontImg.onerror = ()=>{ if(c.alt && c.front !== c.alt){ c.front = c.alt; if(cards[current] === c || cards[pendingIndex] === c) setFront(cards.indexOf(c)); } };
     frontImg.src = c.front; frontImg.style.display='block';
     // las capas del relieve usan la misma imagen (ya descargada)
     reliefShade.src = reliefShine.src = c.front;
     // se adelanta la descarga de la siguiente para que la vuelta no se quede en blanco
     const next = cards[(i+1) % cards.length];
-    if(next && next !== c) new Image().src = next.front;
+    if(next && next !== c){
+      const pre = new Image();
+      pre.onerror = ()=>{ if(next.alt && next.front !== next.alt) next.front = next.alt; };
+      pre.src = next.front;
+    }
   }
   function setBack(i){
     const c = cards[i];
@@ -226,24 +232,29 @@
     card.style.setProperty('--gy', gy.toFixed(1)+'%');
     card.style.setProperty('--hi', hi.toFixed(2));
     card.style.setProperty('--hr', (ry*6).toFixed(1));
-    setReliefLight(rx, ry);
+    setReliefLight(gx, gy);
   }
 
   // ---- Relieve ----
-  // la luz llega de arriba a la izquierda y gira y se inclina con la carta: así los relieves brillan y hacen sombra al moverse
+  // una sola luz para todo: llega desde donde está el reflejo del brillo (--gx, --gy). Cuanto más lejos del centro
+  // está el reflejo, más rasante es la luz y más se marcan los relieves; con el reflejo en el centro, cae casi de frente.
   const RELIEF_SCALE = {no: 0, suave: 2.5, marcado: 6};
   const reliefShade = document.getElementById('reliefShade');
   const reliefShine = document.getElementById('reliefShine');
   const reliefLights = document.querySelectorAll('.relief-light');
+  const reliefDiffuse = document.querySelector('#fRelieveSombra feDiffuseLighting');
   let reliefOn = false, lastAz = null, lastEl = null;
-  function setReliefLight(rx, ry){
+  function setReliefLight(gx, gy){
     if(!reliefOn) return;
-    const az = 225 + ry*5 - rx*4;
-    const el = Math.max(25, Math.min(65, 45 + rx*2 - Math.abs(ry)*0.6));
+    const dx = gx - 50, dy = gy - 50;   // en % de la carta; y hacia abajo, igual que el azimut de SVG
+    const az = Math.atan2(dy, dx) * 180 / Math.PI;
+    const el = Math.max(25, Math.min(70, 70 - Math.hypot(dx, dy) * 1.1));
     // los filtros de luz son caros: solo se recalculan si la luz cambia de verdad
     if(lastAz !== null && Math.abs(az - lastAz) < 0.4 && Math.abs(el - lastEl) < 0.4) return;
     lastAz = az; lastEl = el;
     reliefLights.forEach(l=>{ l.setAttribute('azimuth', az.toFixed(1)); l.setAttribute('elevation', el.toFixed(1)); });
+    // lo plano recibe sin(elevación) de luz: así queda siempre en gris medio (neutro en overlay) y solo cambian los relieves
+    reliefDiffuse.setAttribute('diffuseConstant', (0.5 / Math.sin(el * Math.PI / 180)).toFixed(3));
   }
   function setRelief(name){
     if(!(name in RELIEF_SCALE)) name = 'no';
@@ -463,7 +474,7 @@
       queriedAt = r.at; priceDate = r.date;
       // copia nueva cada vez: los reversos por defecto según sea líder o no
       const backFor = c => game === 'op' ? (c.leader ? BACK_LEADER : BACK_NORMAL) : (GAME_BACKS[game] || null);
-      const deck = list.map(c=>({front:c.front, thumb:c.thumb, back: backFor(c), name:c.name, id:c.id, precios:Object.assign({}, c.precios), price: avgPrice(c.precios)}));
+      const deck = list.map(c=>({front:c.front, alt:c.alt, thumb:c.thumb, back: backFor(c), name:c.name, id:c.id, precios:Object.assign({}, c.precios), price: avgPrice(c.precios)}));
       deck.sort((a, b)=>b.price - a.price);
       showDeck(deck, code);
       setStatus.textContent = list.length ? statusText(list.length) + (limit > list.length ? ' Esta expansión solo tiene ' + list.length + ' cartas con precio.' : '')

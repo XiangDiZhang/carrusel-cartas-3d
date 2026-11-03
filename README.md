@@ -19,7 +19,7 @@ En línea: https://xiangdizhang.github.io/carrusel-cartas-3d/
 |---|---|---|
 | TCGplayer (precio de mercado) | sí | sí |
 | Cardmarket (tendencia) | no hay fuente gratuita | sí, vía TCGdex |
-| Imagen | TCGplayer, la de cada versión | TCGplayer, la de cada versión |
+| Imagen | TCGplayer, la de cada versión (600 × 838) | pokemontcg.io (733 × 1024) si se comprueba que es la misma carta; si no, TCGplayer |
 
 - **TCGplayer** llega a través de TCGCSV, que lo copia una vez al día (hacia las 20:00 UTC). El navegador no puede consultar TCGCSV (no envía CORS), así que la tarea de GitHub lo descarga cada día y deja un fichero pequeño por expansión (las 50 cartas más caras) en la rama `datos`. Cada versión de una carta (alternativa, manga, SP…) es un producto distinto con su imagen y su precio.
 - **Cardmarket** se consulta en vivo a TCGdex, solo para las cartas que se muestran. Solo se usa si TCGdex indica el mismo producto de TCGplayer (así no se mezclan versiones).
@@ -45,6 +45,8 @@ El botón «Enlace para OBS» crea y copia un enlace a esta misma página con la
 
 ## Relieve
 
-Simula el relieve de los foils texturizados: la luminosidad de la imagen hace de mapa de alturas (claro = sube) y dos filtros de luz SVG (difusa para el volumen, especular para los destellos de las aristas) se iluminan con una luz que gira con la inclinación de la carta. Es una simulación a partir del dibujo: nadie publica la textura real de cada carta.
+Simula el relieve de los foils texturizados. Con relieve, el brillo elegido baja en lo plano y sus colores tiñen los destellos de las aristas (una sola luz, la del reflejo, para brillo y relieve).
+
+Cómo: la luminosidad de la imagen hace de mapa de alturas (claro = sube) y dos filtros de luz SVG (difusa para el volumen, especular para los destellos de las aristas) se iluminan con una luz que gira con la inclinación de la carta. Es una simulación a partir del dibujo: nadie publica la textura real de cada carta.
 
 En OBS: Fuente → Navegador → pegar el enlace en «URL». Los datos se consultan cada vez que OBS carga la fuente, y la página se recarga sola cada 6 horas. Si la expansión del enlace deja de existir, se abre la más reciente. Los reversos cambiados a mano no viajan en el enlace.

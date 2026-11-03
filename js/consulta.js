@@ -9,6 +9,7 @@ window.Consulta = (function(){
   const TCGDEX = 'https://api.tcgdex.net/v2/en/cards/';
   const CAMBIO = 'https://api.frankfurter.dev/v1/latest?from=USD&to=EUR';
   const IMG = 'https://tcgplayer-cdn.tcgplayer.com/product/';
+  const PTCG_IMG = 'https://images.pokemontcg.io/';
 
   // no-store: siempre datos nuevos, nunca los de la caché del navegador
   async function pedirJson(url, intentos = 3){
@@ -44,8 +45,12 @@ window.Consulta = (function(){
   // distinto con su propia imagen y su propio precio
   async function cartas(game, code){
     const [data, date] = await Promise.all([pedirJson(DATOS + game + '/' + code + '.json'), fechaTcgplayer()]);
+    // Pokémon: si el generador comprobó la carta en pokemontcg.io (mismo número y nombre), su imagen grande
+    // (733 × 1024) en vez de la de TCGplayer (600 × 838); si no carga, se vuelve a la de TCGplayer (alt)
+    const grande = c => c.s ? PTCG_IMG + c.s + '_hires.png' : null;
     const list = data.cartas.map(c=>({
-      front: IMG + c.p + '_in_1000x1000.jpg', thumb: IMG + c.p + '_200w.jpg',
+      front: grande(c) || IMG + c.p + '_in_1000x1000.jpg', alt: grande(c) ? IMG + c.p + '_in_1000x1000.jpg' : null,
+      thumb: IMG + c.p + '_200w.jpg',
       name: c.n, id: c.id, productId: c.p, leader: !!c.l, tcgdex: c.t || null,
       precios: {tcgplayer: c.v}   // en $; cardmarket (en €) se añade con otrosPrecios()
     }));
