@@ -16,10 +16,12 @@ $ErrorActionPreference = 'Stop'
 [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
 $JUEGOS = [ordered]@{ op = 68; pkm = 3 }
 $utf8 = New-Object Text.UTF8Encoding $false
+# TCGCSV pide que las descargas automáticas se identifiquen
+$UA = 'carrusel-cartas-3d/1.0 (+https://github.com/XiangDiZhang/carrusel-cartas-3d)'
 
 function Pedir($url){
   for($k = 1; ; $k++){
-    try { return Invoke-RestMethod -Uri $url -TimeoutSec 60 }
+    try { return Invoke-RestMethod -Uri $url -TimeoutSec 60 -UserAgent $UA }
     catch { if($k -ge 4){ throw }; Start-Sleep -Seconds (3 * $k) }
   }
 }
@@ -33,7 +35,7 @@ function Dato($p, $nombre){
   return ''
 }
 
-$fecha = (Invoke-WebRequest -Uri 'https://tcgcsv.com/last-updated.txt' -UseBasicParsing -TimeoutSec 60).Content.Trim()
+$fecha = (Invoke-WebRequest -Uri 'https://tcgcsv.com/last-updated.txt' -UseBasicParsing -TimeoutSec 60 -UserAgent $UA).Content.Trim()
 $ahora = [DateTime]::UtcNow
 
 # Pokémon: para poder pedir el precio de Cardmarket a TCGdex hace falta el código de cada carta allí.
