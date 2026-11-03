@@ -59,6 +59,8 @@ foreach($juego in $JUEGOS.Keys){
   $grupos = @((Pedir "https://tcgcsv.com/tcgplayer/$cat/groups").results |
     Where-Object { $_.publishedOn -and ([DateTime]$_.publishedOn) -le $ahora } |
     Sort-Object { [DateTime]$_.publishedOn } -Descending)
+  # One Piece: fuera los mazos de inicio (ST-xx, también los Ultra Deck y las ediciones Super Pre-Release)
+  if($juego -eq 'op'){ $grupos = @($grupos | Where-Object { $_.abbreviation -notmatch '^ST-' }) }
   if($soloGrupos.Count){ $grupos = @($grupos | Where-Object { $soloGrupos -contains $_.groupId }) }
   if($maxExpansiones -gt 0){ $grupos = @($grupos | Select-Object -First $maxExpansiones) }
   $lista = New-Object Collections.ArrayList
@@ -91,12 +93,31 @@ foreach($juego in $JUEGOS.Keys){
         if($td.salida){ $salidaSet = [DateTime]$td.salida; $fiable = $true }
       }
     }
-    Guardar (Join-Path $salida "$juego/$($g.groupId).json") @{ cartas = $cartas }
     # si el nombre ya lleva su código («SV08: Surging Sparks») no se repite
     $etiqueta = if($g.abbreviation -and $g.name -notmatch ":"){ "$($g.abbreviation): $($g.name)" } else { $g.name }
-    [void]$lista.Add([pscustomobject][ordered]@{ code = [string]$g.groupId; label = $etiqueta; year = $salidaSet.Year; fecha = $salidaSet; grupo = [int]$g.groupId; fiable = $fiable })
+    [void]$lista.Add([pscustomobject][ordered]@{ code = [string]$g.groupId; label = $etiqueta; year = $salidaSet.Year; fecha = $salidaSet;
+      grupo = [int]$g.groupId; fiable = $fiable; nombre = ($g.name -replace '^[^:]*:\s*', '').Trim(); cartas = $cartas; padre = $null })
     Write-Host "$juego $($g.groupId) $etiqueta ($($cartas.Count))"
   }
+
+  # Sub-colecciones de una expansión (Classic Collection, Trainer Gallery, Release Event…): se juntan con ella.
+  # Solo con estos añadidos: «Heroines Edition Vol. 2», «Base Set 2» o «EX Dragon Frontiers» son expansiones distintas.
+  $SUBCOLECCIONES = @('Classic Collection', 'Trainer Gallery', 'Galarian Gallery', 'Shiny Vault', 'Radiant Collection',
+                      'Release Event Cards', 'Pre-Release Cards')
+  foreach($e in $lista){
+    $padre = $lista | Where-Object { $_ -ne $e -and $e.nombre.Length -gt $_.nombre.Length -and $e.nombre.StartsWith($_.nombre) -and
+      ($SUBCOLECCIONES -contains $e.nombre.Substring($_.nombre.Length).Trim(' ', ':', '-', '(', ')')) } |
+      Sort-Object { $_.nombre.Length } -Descending | Select-Object -First 1
+    if($padre){ $e.padre = $padre }
+  }
+  foreach($e in @($lista | Where-Object padre)){
+    $p = $e.padre
+    while($p.padre){ $p = $p.padre }
+    $p.cartas = @(@($p.cartas) + @($e.cartas) | Sort-Object v -Descending | Select-Object -First $maxCartas)
+    Write-Host "  junta $($e.label) con $($p.label)"
+  }
+  $lista = [Collections.ArrayList]@($lista | Where-Object { -not $_.padre })
+  foreach($e in $lista){ Guardar (Join-Path $salida "$juego/$($e.code).json") @{ cartas = $e.cartas } }
   # las que TCGdex no conoce toman la fecha de la emparejada con el groupId más cercano (TCGplayer las creó a la vez),
   # si esa es de más de un año antes (las recién salidas que TCGdex aún no tiene se quedan con su fecha)
   $buenas = @($lista | Where-Object fiable)
