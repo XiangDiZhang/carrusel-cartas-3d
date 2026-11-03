@@ -41,7 +41,7 @@ El botón «Enlace para OBS» crea y copia un enlace a esta misma página con la
 `https://xiangdizhang.github.io/carrusel-cartas-3d/?obs=1&juego=pkm&exp=24722&n=5&brillo=oro&int=35&moneda=USD`
 
 - `obs=1`: solo la carta y su precio, con fondo transparente.
-- `juego` (`op` o `pkm`), `exp` (código de la expansión), `n` (1 a 50 cartas), `brillo`, `relieve` (`no`, `suave` o `marcado`), `int` (0 a 300) y `moneda` (`EUR` o `USD`).
+- `juego` (`op` o `pkm`), `exp` (código de la expansión), `n` (1 a 50 cartas), `brillo`, `relieve` (0 a 100; 0 = sin relieve), `int` (0 a 300) y `moneda` (`EUR` o `USD`).
 
 ## Relieve
 

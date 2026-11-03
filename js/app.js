@@ -238,7 +238,7 @@
   // ---- Relieve ----
   // una sola luz para todo: llega desde donde está el reflejo del brillo (--gx, --gy). Cuanto más lejos del centro
   // está el reflejo, más rasante es la luz y más se marcan los relieves; con el reflejo en el centro, cae casi de frente.
-  const RELIEF_SCALE = {no: 0, suave: 2.5, marcado: 6};
+  const RELIEF_MAX = 8;   // altura de los relieves con el deslizador al 100 %
   const reliefShade = document.getElementById('reliefShade');
   const reliefShine = document.getElementById('reliefShine');
   const reliefLights = document.querySelectorAll('.relief-light');
@@ -256,19 +256,23 @@
     // lo plano recibe sin(elevación) de luz: así queda siempre en gris medio (neutro en overlay) y solo cambian los relieves
     reliefDiffuse.setAttribute('diffuseConstant', (0.5 / Math.sin(el * Math.PI / 180)).toFixed(3));
   }
-  function setRelief(name){
-    if(!(name in RELIEF_SCALE)) name = 'no';
-    card.dataset.relieve = name;
-    reliefOn = name !== 'no';
-    document.querySelectorAll('#reliefPicker button').forEach(x=>x.setAttribute('aria-pressed', x.dataset.relieve===name?'true':'false'));
+  // intensidad del relieve de 0 (sin relieve) a 100: altura de los relieves, fuerza de la sombra y del color en las aristas
+  const relRange = document.getElementById('relRange');
+  const relVal = document.getElementById('relVal');
+  function setRelief(v){
+    v = Math.max(0, Math.min(100, Math.round(Number(v) || 0)));
+    relRange.value = v;
+    relVal.textContent = v ? v + ' %' : 'No';
+    card.dataset.relieve = v ? 'si' : 'no';
+    card.style.setProperty('--rel', (v/100).toFixed(2));
+    reliefOn = v > 0;
     document.querySelectorAll('#fRelieveSombra feDiffuseLighting, #fRelieveBrillo feSpecularLighting')
-      .forEach(f=>f.setAttribute('surfaceScale', RELIEF_SCALE[name]));
+      .forEach(f=>f.setAttribute('surfaceScale', (v/100*RELIEF_MAX).toFixed(2)));
     lastAz = null;
   }
-  document.getElementById('reliefPicker').addEventListener('click', e=>{
-    const b = e.target.closest('button'); if(!b) return;
-    setRelief(b.dataset.relieve);
-  });
+  relRange.addEventListener('input', ()=>setRelief(relRange.value));
+  // enlaces de OBS antiguos: relieve=no / suave / marcado
+  const RELIEF_NAMES = {no: 0, suave: 35, marcado: 75};
 
   document.getElementById('holoPicker').addEventListener('click', e=>{
     const b = e.target.closest('button'); if(!b) return;
@@ -277,19 +281,24 @@
   function setHolo(name){
     card.dataset.holo = name;
     document.querySelectorAll('#holoPicker button').forEach(x=>x.setAttribute('aria-pressed', x.dataset.holo===name?'true':'false'));
+    // sin brillo no hay intensidad que tocar
+    intRange.disabled = name === 'ninguno';
   }
 
   const intRange = document.getElementById('intRange');
   const intVal = document.getElementById('intVal');
-  intRange.addEventListener('input', ()=>{
-    card.style.setProperty('--int', (intRange.value/100).toFixed(2));
-    intVal.textContent = intRange.value + '%';
-  });
+  intRange.addEventListener('input', ()=>setIntensity(intRange.value));
   function setIntensity(v){
     intRange.value = v;
     card.style.setProperty('--int', (v/100).toFixed(2));
-    intVal.textContent = v + '%';
+    intVal.textContent = v + ' %';
   }
+
+  // valores de inicio del efecto foil
+  const FX_DEFAULT = {holo: 'arcoiris', int: 35, rel: 0};
+  document.getElementById('fxReset').addEventListener('click', ()=>{
+    setHolo(FX_DEFAULT.holo); setIntensity(FX_DEFAULT.int); setRelief(FX_DEFAULT.rel);
+  });
 
   function updateButtons(){ const none = cards.length === 0; playBtn.disabled = none; document.getElementById('obsBtn').disabled = none; }
 
@@ -399,7 +408,7 @@
   const obsLink = document.getElementById('obsLink');
   const isDefaultBack = b => !b || b === BACK_NORMAL || b === BACK_LEADER || Object.values(GAME_BACKS).includes(b);
   function obsUrl(){
-    const p = new URLSearchParams({obs: '1', juego: game, exp: activeSet, n: String(limit), brillo: card.dataset.holo, relieve: card.dataset.relieve, int: intRange.value, moneda: currency});
+    const p = new URLSearchParams({obs: '1', juego: game, exp: activeSet, n: String(limit), brillo: card.dataset.holo, relieve: relRange.value, int: intRange.value, moneda: currency});
     return location.origin + location.pathname + '?' + p;
   }
   obsBtn.addEventListener('click', async ()=>{
@@ -407,9 +416,10 @@
     const url = obsUrl();
     obsLink.value = url;
     obsLink.focus(); obsLink.select();
-    const note = copied => obsNote.textContent = (copied ? 'Enlace copiado. ' : 'Copia el enlace. ') +
-      'En OBS: Fuente → Navegador → pégalo en «URL» (por ejemplo, 1080 × 1080).' +
-      (cards.some(c=>!isDefaultBack(c.back)) ? ' Los reversos que hayas cambiado no van en el enlace: en OBS salen los de por defecto.' : '');
+    // corto: cabe en las dos líneas que la nota tiene reservadas
+    const note = copied => obsNote.textContent = (copied ? 'Enlace copiado' : 'Copia el enlace') +
+      (cards.some(c=>!isDefaultBack(c.back)) ? ' (sin tus reversos propios)' : '') +
+      '. En OBS: Fuente → Navegador → pégalo en «URL», por ejemplo a 1080 × 1080.';
     note(false);
     // el portapapeles puede no contestar nunca (permisos): no se le espera para dar las instrucciones
     try{ await Promise.race([navigator.clipboard.writeText(url), new Promise((_, no)=>setTimeout(no, 2000))]); note(true); }catch(err){}
@@ -598,7 +608,7 @@
     if(PARAMS.get('moneda') === 'USD') currency = 'USD';
     const n = Number(PARAMS.get('n')); if(n >= 1) limit = Math.min(MAX_CARDS, Math.round(n));
     if(PARAMS.has('brillo')) setHolo(PARAMS.get('brillo'));
-    if(PARAMS.has('relieve')) setRelief(PARAMS.get('relieve'));
+    if(PARAMS.has('relieve')){ const r = PARAMS.get('relieve'); setRelief(r in RELIEF_NAMES ? RELIEF_NAMES[r] : r); }
     if(PARAMS.has('int')) setIntensity(Math.max(0, Math.min(300, Number(PARAMS.get('int')) || 0)));
     gameSelect.value = g;
     // si la expansión del enlace ya no existe, se abre la más reciente

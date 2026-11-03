@@ -44,34 +44,47 @@
   <div class="controls">
     <button id="playBtn" class="primary" disabled>Pausar</button>
   </div>
-  <p class="picker-label">Tipo de brillo</p>
-  <div class="holo-picker" id="holoPicker">
-    <button data-holo="original" aria-pressed="false">Original</button>
-    <button data-holo="arcoiris" aria-pressed="true">Arcoíris</button>
-    <button data-holo="purpurina" aria-pressed="false">Purpurina</button>
-    <button data-holo="oro" aria-pressed="false">Oro</button>
-    <button data-holo="plata" aria-pressed="false">Plata</button>
-    <button data-holo="prisma" aria-pressed="false">Prisma</button>
-    <button data-holo="grabado" aria-pressed="false">Grabado</button>
-    <button data-holo="galaxia" aria-pressed="false">Galaxia</button>
-    <button data-holo="aurora" aria-pressed="false">Aurora</button>
-    <button data-holo="ninguno" aria-pressed="false">Sin brillo</button>
-  </div>
-  <p class="picker-label">Relieve</p>
-  <div class="holo-picker" id="reliefPicker">
-    <button data-relieve="no" aria-pressed="true">Sin relieve</button>
-    <button data-relieve="suave" aria-pressed="false">Suave</button>
-    <button data-relieve="marcado" aria-pressed="false">Marcado</button>
-  </div>
-  <div class="int-row">
-    <label for="intRange">Intensidad</label>
-    <input type="range" id="intRange" min="0" max="300" step="5" value="35">
-    <output id="intVal" for="intRange">35%</output>
-  </div>
+  <!-- Efecto foil: el brillo (tipo + intensidad) y el relieve (intensidad), cada uno con su valor a la vista -->
+  <section class="fx-panel" aria-labelledby="fxTitle">
+    <div class="fx-head">
+      <h2 class="fx-title" id="fxTitle">Efecto foil</h2>
+      <button type="button" class="fx-reset" id="fxReset">Restablecer</button>
+    </div>
+    <div class="fx-group">
+      <span class="fx-label" id="holoLabel">Brillo</span>
+      <div class="holo-picker" id="holoPicker" role="group" aria-labelledby="holoLabel">
+        <button data-holo="original" aria-pressed="false"><span class="sw" aria-hidden="true"></span>Original</button>
+        <button data-holo="arcoiris" aria-pressed="true"><span class="sw" aria-hidden="true"></span>Arcoíris</button>
+        <button data-holo="purpurina" aria-pressed="false"><span class="sw" aria-hidden="true"></span>Purpurina</button>
+        <button data-holo="oro" aria-pressed="false"><span class="sw" aria-hidden="true"></span>Oro</button>
+        <button data-holo="plata" aria-pressed="false"><span class="sw" aria-hidden="true"></span>Plata</button>
+        <button data-holo="prisma" aria-pressed="false"><span class="sw" aria-hidden="true"></span>Prisma</button>
+        <button data-holo="grabado" aria-pressed="false"><span class="sw" aria-hidden="true"></span>Grabado</button>
+        <button data-holo="galaxia" aria-pressed="false"><span class="sw" aria-hidden="true"></span>Galaxia</button>
+        <button data-holo="aurora" aria-pressed="false"><span class="sw" aria-hidden="true"></span>Aurora</button>
+        <button data-holo="ninguno" aria-pressed="false"><span class="sw" aria-hidden="true"></span>Sin brillo</button>
+      </div>
+      <div class="fx-slider">
+        <label for="intRange">Intensidad del brillo</label>
+        <input type="range" id="intRange" min="0" max="300" step="5" value="35">
+        <output id="intVal" for="intRange">35 %</output>
+      </div>
+    </div>
+    <div class="fx-group">
+      <div class="fx-slider">
+        <label for="relRange">Relieve</label>
+        <input type="range" id="relRange" min="0" max="100" step="5" value="0">
+        <output id="relVal" for="relRange">No</output>
+      </div>
+      <p class="fx-hint">Contornos y letras sobresalen, y el color del brillo se concentra en ellos.</p>
+    </div>
+  </section>
   <div class="obs-row">
-    <button id="obsBtn" disabled>Enlace para OBS</button>
-    <input type="text" id="obsLink" class="obs-link" readonly placeholder="Pulsa el botón para crear el enlace" aria-label="Enlace para OBS">
-    <p class="obs-note" id="obsNote">Copia un enlace con el juego, la expansión, el número de cartas, el brillo, la intensidad y la moneda actuales. En OBS: Fuente → Navegador → pega el enlace en «URL». Los precios se consultan cada vez que OBS carga la fuente.</p>
+    <div class="obs-line">
+      <button id="obsBtn" disabled>Enlace para OBS</button>
+      <input type="text" id="obsLink" class="obs-link" readonly placeholder="Aquí aparecerá el enlace" aria-label="Enlace para OBS">
+    </div>
+    <p class="obs-note" id="obsNote">Con la expansión y el efecto foil actuales. En OBS: Fuente → Navegador → pégalo en «URL»; los precios se consultan al cargar.</p>
   </div>
   <p class="hint">En pausa puedes arrastrar la carta con el dedo o el ratón para inclinarla tú.</p>
 </div>
