@@ -100,9 +100,10 @@
       const inputId = 'backInput_' + (uid++);
       const t = document.createElement('div');
       t.className = 'thumb' + (i===current?' active':'') + (c.back?' has-back':'') + (selected.has(c)?' selected':'') + (c.price!=null?' has-price':'');
-      if(c.name) t.title = c.name + (c.id ? ' (' + c.id + ')' : '') + (c.price!=null ? ' · ' + fmtPrice(c.price) : '');
+      if(c.name) t.title = c.name + (c.id ? ' (' + c.id + ')' : '') + (c.price!=null ? ' · ' + fmtPrice(c.price) : '') + (c.precios ? '\n' + sourcesText(c) : '');
+      // miniatura pequeña; la imagen grande solo se carga para la carta que se ve (y la siguiente)
       t.innerHTML =
-        '<img src="'+c.front+'" alt="Carta '+(i+1)+'">' +
+        '<img src="'+(c.thumb || c.front)+'" alt="Carta '+(i+1)+'" loading="lazy">' +
         '<label class="mini-btn back-set" for="'+inputId+'" title="Añadir reverso" aria-label="Añadir reverso">' + ICON.back + '</label>' +
         '<button class="mini-btn remove" title="Quitar" aria-label="Quitar">' + ICON.x + '</button>' +
         '<input type="file" id="'+inputId+'" class="back-input" accept="image/*" style="display:none">' +
@@ -188,9 +189,13 @@
 
   const priceTag = document.getElementById('priceTag');
   const priceVal = document.getElementById('priceVal');
+  const priceLabel = priceTag.querySelector('.pt-label');
   function setPriceTag(i){
     const c = cards[i];
-    if(c && c.price!=null){ priceVal.textContent = fmtPrice(c.price); priceTag.hidden = false; }
+    if(c && c.price!=null){
+      priceLabel.textContent = c.precios && c.precios.cardmarket ? 'Precio medio' : 'Precio de mercado';
+      priceVal.textContent = fmtPrice(c.price); priceTag.hidden = false;
+    }
     else priceTag.hidden = true;
   }
   function setFront(i){
@@ -199,6 +204,9 @@
     if(!c){ placeholder.style.display='flex'; frontImg.style.display='none'; return; }
     placeholder.style.display='none';
     frontImg.src = c.front; frontImg.style.display='block';
+    // se adelanta la descarga de la siguiente para que la vuelta no se quede en blanco
+    const next = cards[(i+1) % cards.length];
+    if(next && next !== c) new Image().src = next.front;
   }
   function setBack(i){
     const c = cards[i];
@@ -379,7 +387,7 @@
     const data = {
       holo: card.dataset.holo,
       int: Number(intRange.value), currency, rate: EUR_RATE,
-      cards: cards.map(c=>({front:c.front, back: backs.get(c.back) || c.back, price: c.price}))
+      cards: cards.map(c=>({front:c.front, back: backs.get(c.back) || c.back, price: c.price, precios: c.precios}))
     };
     const doc = new DOMParser().parseFromString(TEMPLATE, 'text/html');
     const css = doc.querySelector('link[href^="css/"]');
@@ -432,8 +440,25 @@
     return pr;
   }
   const fmtDay = iso => iso.split('-').reverse().join('/');
+  // precio medio en $ entre las fuentes que tengan la carta (Cardmarket va en € y se pasa a $)
+  function avgPrice(p){
+    const v = [p.tcgplayer];
+    if(p.cardmarket) v.push(p.cardmarket / EUR_RATE);
+    return v.reduce((a, b)=>a + b, 0) / v.length;
+  }
+  const fmtEur = v => v.toLocaleString('de-DE', {minimumFractionDigits:2, maximumFractionDigits:2}) + ' €';
+  function sourcesText(c){
+    if(!c.precios) return '';
+    let t = 'TCGplayer ' + '$' + c.precios.tcgplayer.toLocaleString('en-US', {minimumFractionDigits:2, maximumFractionDigits:2});
+    if(c.precios.cardmarket) t += ' · Cardmarket ' + fmtEur(c.precios.cardmarket);
+    return t;
+  }
   function statusText(n){
-    let t = 'Top ' + n + ' de ' + GAME_NAMES[game] + ' en inglés. Precio de mercado en TCGplayer' + (priceDate ? ' del ' + fmtDay(priceDate) : '') + ', consultado el ' + (queriedAt ? fmtDate(queriedAt) : '…');
+    const withCm = cards.filter(c=>c.precios && c.precios.cardmarket).length;
+    let t = 'Top ' + n + ' de ' + GAME_NAMES[game] + ' en inglés. ';
+    if(withCm) t += 'Precio medio entre TCGplayer' + (priceDate ? ' (' + fmtDay(priceDate) + ')' : '') + ' y Cardmarket (hoy' + (withCm < n ? ', ' + withCm + ' de ' + n + ' cartas; el resto solo TCGplayer' : '') + ')';
+    else t += 'Precio de mercado en TCGplayer' + (priceDate ? ' del ' + fmtDay(priceDate) : '') + (game === 'op' ? ' (no hay otra fuente gratuita para One Piece)' : '');
+    t += ', consultado el ' + (queriedAt ? fmtDate(queriedAt) : '…');
     if(currency === 'EUR') t += ', pasado a euros (1 $ = ' + EUR_RATE.toLocaleString('de-DE',{maximumFractionDigits:4}) + ' €' + (rateDate ? ', cambio del ' + fmtDay(rateDate) : '') + ')';
     return t + '. Tus cartas siguen en «Mis cartas subidas».';
   }
@@ -451,14 +476,17 @@
     showSkeleton(limit);
     try{
       const r = await fetchSet(code);
-      await rateReady;
-      if(token !== setToken) return -1;
       const list = r.list.slice(0, limit);
+      // las otras fuentes se consultan solo para las cartas que se van a mostrar
+      await Promise.all([Consulta.otrosPrecios(list), rateReady]);
+      if(token !== setToken) return -1;
       queriedAt = r.at; priceDate = r.date;
       if(!activeSet) myCards = cards;
       // copia nueva cada vez: los reversos por defecto según sea líder o no
       const backFor = c => game === 'op' ? (c.leader ? BACK_LEADER : BACK_NORMAL) : (GAME_BACKS[game] || null);
-      showDeck(list.map(c=>({front:c.front, back: backFor(c), name:c.name, id:c.id, price:c.price})), code);
+      const deck = list.map(c=>({front:c.front, thumb:c.thumb, back: backFor(c), name:c.name, id:c.id, precios:Object.assign({}, c.precios), price: avgPrice(c.precios)}));
+      deck.sort((a, b)=>b.price - a.price);
+      showDeck(deck, code);
       setStatus.textContent = list.length ? statusText(list.length) + (limit > list.length ? ' Esta expansión solo tiene ' + list.length + ' cartas con precio.' : '')
                                           : 'Esta expansión aún no tiene cartas con precio en TCGplayer.';
       return list.length;
@@ -580,7 +608,7 @@
     document.body.classList.add('obs');
     if(OBS.currency) currency = OBS.currency;
     if(OBS.rate) EUR_RATE = OBS.rate;
-    cards = OBS.cards.map(c=>({front:c.front, back: c.back, price: c.price}));
+    cards = OBS.cards.map(c=>({front:c.front, back: c.back, price: c.price, precios: c.precios}));
     card.dataset.holo = OBS.holo || 'arcoiris';
     card.style.setProperty('--int', ((OBS.int ?? 100)/100).toFixed(2));
     current = 0;

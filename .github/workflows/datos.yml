@@ -1,0 +1,32 @@
+# Cada día descarga de TCGCSV (copia diaria de TCGplayer) expansiones, cartas y precios
+# y los publica en la rama «datos», que la página consulta al cargar.
+name: Datos de precios
+on:
+  schedule:
+    - cron: '45 20 * * *'   # TCGCSV se actualiza hacia las 20:00 UTC
+    - cron: '45 8 * * *'    # repaso por si la de la noche falló
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths: ['herramientas/actualizar-datos.ps1', '.github/workflows/datos.yml']
+permissions:
+  contents: write
+concurrency:
+  group: datos
+  cancel-in-progress: false
+jobs:
+  datos:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+      - name: Descargar precios
+        shell: pwsh
+        run: ./herramientas/actualizar-datos.ps1 -salida "$env:RUNNER_TEMP/datos"
+      - name: Publicar en la rama datos
+        run: |
+          cd "$RUNNER_TEMP/datos"
+          git init -q -b datos
+          git add -A
+          git -c user.name="github-actions[bot]" -c user.email="41898282+github-actions[bot]@users.noreply.github.com" commit -q -m "Precios de TCGCSV del $(date -u +%F)"
+          git push -q -f "https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}.git" datos
