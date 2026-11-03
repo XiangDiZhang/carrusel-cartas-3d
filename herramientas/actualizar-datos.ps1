@@ -96,7 +96,7 @@ foreach($juego in $JUEGOS.Keys){
     # si el nombre ya lleva su código («SV08: Surging Sparks») no se repite
     $etiqueta = if($g.abbreviation -and $g.name -notmatch ":"){ "$($g.abbreviation): $($g.name)" } else { $g.name }
     [void]$lista.Add([pscustomobject][ordered]@{ code = [string]$g.groupId; label = $etiqueta; year = $salidaSet.Year; fecha = $salidaSet;
-      grupo = [int]$g.groupId; fiable = $fiable; nombre = ($g.name -replace '^[^:]*:\s*', '').Trim(); cartas = $cartas; padre = $null })
+      grupo = [int]$g.groupId; fiable = $fiable; nombre = ($g.name -creplace '^[A-Z0-9 -]+:\s*', '').Trim(); cartas = $cartas; padre = $null })
     Write-Host "$juego $($g.groupId) $etiqueta ($($cartas.Count))"
   }
 
