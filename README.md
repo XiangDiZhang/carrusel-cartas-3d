@@ -14,7 +14,7 @@ Proyecto sacado del artefacto «Carrusel de cartas 3D» (https://claude.ai/artif
 
 Cada vez que se abre o se refresca la página se consulta de nuevo (con `cache: 'no-store'`, nunca de la caché):
 
-- **One Piece**: https://optcgapi.com (expansiones, cartas y precio de mercado de TCGplayer, que la API actualiza a diario).
+- **One Piece**: https://optcgapi.com (expansiones, cartas y precio de mercado de TCGplayer, que la API actualiza a diario). Su lista de expansiones tarda en incluir las nuevas, así que se prueban también las dos siguientes de cada serie (OP, EB, PRB). Si una carta aún no tiene imagen en optcgapi, se usa la de Limitless TCG.
 - **Pokémon**: https://pokemontcg.io (expansiones, cartas y precio de mercado de TCGplayer). Falla a menudo con 500/502/503, por eso se reintenta hasta 6 veces. Sus precios pueden llevar unas semanas de retraso y las expansiones recién salidas pueden no tener precios todavía: al cambiar de juego se abre la más reciente que sí tenga.
 - **Cambio $ → €**: https://frankfurter.dev (BCE, del día).
 
