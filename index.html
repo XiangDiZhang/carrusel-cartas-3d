@@ -15,13 +15,13 @@
   <main class="main">
     <header>
   <h1>Carrusel de cartas 3D</h1>
-  <p class="sub">Sube todas las cartas que quieras. Cada una flota un rato, da la vuelta enseñando su reverso y pasa a la siguiente.</p>
+  <p class="sub">Las cartas más caras de cada expansión, con su precio del día. Cada una flota un rato, da la vuelta enseñando su reverso y pasa a la siguiente.</p>
 </header>
     <div class="stage-wrap">
   <div class="stage" id="stage">
     <div class="card" id="card" data-holo="arcoiris">
       <div class="face front">
-        <div class="placeholder" id="placeholder"><div class="glyph"><svg class="ico" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" fill="currentColor"><path d="M228,128a12,12,0,0,1-12,12H140v76a12,12,0,0,1-24,0V140H40a12,12,0,0,1,0-24h76V40a12,12,0,0,1,24,0v76h76A12,12,0,0,1,228,128Z"/></svg></div><span>Sin cartas</span></div>
+        <div class="placeholder" id="placeholder"><div class="glyph"><svg class="ico" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" fill="currentColor"><path d="M228,128a12,12,0,0,1-12,12H140v76a12,12,0,0,1-24,0V140H40a12,12,0,0,1,0-24h76V40a12,12,0,0,1,24,0v76h76A12,12,0,0,1,228,128Z"/></svg></div><span>Cargando cartas…</span></div>
         <img id="frontImg" style="display:none;" alt="Anverso">
         <!-- el brillo va dentro del anverso: al girar, el reverso se ve sin holo -->
         <div class="holo" id="holo"></div>
@@ -58,13 +58,13 @@
   </div>
   <div class="obs-row">
     <button id="obsBtn" disabled>Exportar para OBS</button>
-    <p class="obs-note" id="obsNote">Descarga un archivo con tus cartas, el brillo y la intensidad actuales. En OBS: Fuente → Navegador → marca "Archivo local" y elige el archivo.</p>
+    <p class="obs-note" id="obsNote">Descarga un archivo con las cartas, el brillo y la intensidad actuales. En OBS: Fuente → Navegador → marca "Archivo local" y elige el archivo.</p>
   </div>
   <p class="hint">En pausa puedes arrastrar la carta con el dedo o el ratón para inclinarla tú.</p>
 </div>
   </main>
   <aside class="sidebar">
-    <h2 class="side-title">Mis cartas <span id="deckCount"></span></h2>
+    <h2 class="side-title">Cartas <span id="deckCount"></span></h2>
     <div class="set-picker">
       <label for="gameSelect">Juego</label>
       <select id="gameSelect">
@@ -72,16 +72,10 @@
         <option value="pkm">Pokémon</option>
       </select>
       <label for="setSelect">Cartas más caras por expansión</label>
-      <select id="setSelect"><option value="">Mis cartas subidas</option></select>
+      <select id="setSelect"></select>
       <p class="set-status" id="setStatus"></p>
     </div>
     <div class="deck-panel">
-  <div class="add-row">
-    <label class="btn primary" for="inputNormal">+ Cartas normales</label>
-    <input type="file" id="inputNormal" accept="image/*" multiple>
-    <label class="btn leader" for="inputLeader">+ Líderes</label>
-    <input type="file" id="inputLeader" accept="image/*" multiple>
-  </div>
   <div class="sel-bar" id="selBar"></div>
   <div class="view-opts" id="viewOpts">
     <div class="opt-row">
@@ -108,7 +102,7 @@
   </div>
   <input type="file" id="bulkBackInput" accept="image/*">
   <div class="thumbs" id="thumbs"></div>
-  <p class="empty-hint" id="emptyHint">Aún no has añadido ninguna carta.</p>
+  <p class="empty-hint" id="emptyHint">Esta expansión no tiene cartas con precio.</p>
 </div>
     <footer>Las cartas normales llevan el reverso azul y los líderes el rojo. Si quieres otro reverso, pulsa el icono de flecha circular en la miniatura.</footer>
   </aside>

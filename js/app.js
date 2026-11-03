@@ -19,8 +19,7 @@
   const setSelect = document.getElementById('setSelect');
   const setStatus = document.getElementById('setStatus');
   const setCache = new Map();   // juego/código -> cartas ya consultadas en esta visita
-  let activeSet = '';           // '' = mis cartas subidas
-  let myCards = null;           // tu mazo guardado mientras ves una expansión
+  let activeSet = '';           // expansión que se está viendo
   let setToken = 0;
   const fmtDate = d => d.toLocaleDateString('es-ES') + ' ' + d.toLocaleTimeString('es-ES', {hour:'2-digit', minute:'2-digit'});
   let queriedAt = null;         // hora de la última consulta de precios
@@ -38,8 +37,6 @@
     return eur ? n.toLocaleString('de-DE', {minimumFractionDigits:d, maximumFractionDigits:d}) + ' €'
                : '$' + n.toLocaleString('en-US', {minimumFractionDigits:d, maximumFractionDigits:d});
   };
-  const inputNormal = document.getElementById('inputNormal');
-  const inputLeader = document.getElementById('inputLeader');
   const stage = document.getElementById('stage');
   const card = document.getElementById('card');
   const holo = document.getElementById('holo');
@@ -351,25 +348,6 @@
 
   playBtn.addEventListener('click', ()=> playing ? stopPlaying() : startPlaying());
 
-  async function addCards(input, backUrl){
-    if(activeSet){ ++setToken; showDeck(myCards || [], ''); myCards = null; setStatus.textContent = ''; setStatus.classList.remove('error'); }
-    const files = Array.from(input.files || []);
-    const wasEmpty = cards.length === 0;
-    for(const f of files){
-      try{ cards.push({front: await readFile(f), back: backUrl}); }catch(err){}
-    }
-    input.value = '';
-    updateButtons();
-    renderThumbs();
-    if(wasEmpty && cards.length){
-      current = 0;
-      setFaces(0, 0);
-      startPlaying();
-    }
-  }
-  inputNormal.addEventListener('change', ()=>addCards(inputNormal, BACK_NORMAL));
-  inputLeader.addEventListener('change', ()=>addCards(inputLeader, BACK_LEADER));
-
   // ---- Exportar para OBS ----
   const obsBtn = document.getElementById('obsBtn');
   const obsNote = document.getElementById('obsNote');
@@ -460,16 +438,11 @@
     else t += 'Precio de mercado en TCGplayer' + (priceDate ? ' del ' + fmtDay(priceDate) : '') + (game === 'op' ? ' (no hay otra fuente gratuita para One Piece)' : '');
     t += ', consultado el ' + (queriedAt ? fmtDate(queriedAt) : '…');
     if(currency === 'EUR') t += ', pasado a euros (1 $ = ' + EUR_RATE.toLocaleString('de-DE',{maximumFractionDigits:4}) + ' €' + (rateDate ? ', cambio del ' + fmtDay(rateDate) : '') + ')';
-    return t + '. Tus cartas siguen en «Mis cartas subidas».';
+    return t + '.';
   }
   async function selectSet(code){
     const token = ++setToken;
-    if(!code){
-      showDeck(myCards || (activeSet ? [] : cards), '');
-      myCards = null;
-      setStatus.textContent = ''; setStatus.classList.remove('error');
-      return;
-    }
+    if(!code) return -1;
     const meta = gameSets(game).find(x=>x.code===code);
     setStatus.classList.remove('error');
     setStatus.textContent = 'Cargando ' + (meta ? meta.label.split(':')[0] : code) + '…';
@@ -481,7 +454,6 @@
       await Promise.all([Consulta.otrosPrecios(list), rateReady]);
       if(token !== setToken) return -1;
       queriedAt = r.at; priceDate = r.date;
-      if(!activeSet) myCards = cards;
       // copia nueva cada vez: los reversos por defecto según sea líder o no
       const backFor = c => game === 'op' ? (c.leader ? BACK_LEADER : BACK_NORMAL) : (GAME_BACKS[game] || null);
       const deck = list.map(c=>({front:c.front, thumb:c.thumb, back: backFor(c), name:c.name, id:c.id, precios:Object.assign({}, c.precios), price: avgPrice(c.precios)}));
@@ -501,11 +473,10 @@
   }
   const gameSelect = document.getElementById('gameSelect');
   async function loadGame(g, autoOpen){
-    // al cambiar de juego, tus cartas vuelven a su sitio y se abre la expansión más reciente
-    if(activeSet){ showDeck(myCards || [], ''); myCards = null; }
+    // al cambiar de juego se abre la expansión más reciente
     const token = ++setToken;
     game = g;
-    setSelect.innerHTML = '<option value="">Mis cartas subidas</option>';
+    setSelect.innerHTML = '';
     if(!SETS_BY_GAME[g]){
       setStatus.classList.remove('error');
       setStatus.textContent = 'Consultando las expansiones de ' + GAME_NAMES[g] + '…';
@@ -536,6 +507,7 @@
     }
   }
   gameSelect.addEventListener('change', ()=>loadGame(gameSelect.value, true));
+  setSelect.addEventListener('change', ()=>selectSet(setSelect.value));
   if(!OBS) loadGame('op', true);
 
   // ---- Moneda ----

@@ -15,9 +15,6 @@ h1{font-size:1.1rem;font-weight:700;margin:0 0 4px;}
 p.sub{margin:0;color:var(--ink-dim);font-size:0.82rem;line-height:1.4;}
 
 .deck-panel{width:100%;max-width:520px;padding:14px 20px 0;}
-.add-row{display:flex;gap:10px;flex-wrap:wrap;justify-content:center;margin-bottom:12px;}
-label.btn.leader{background:#b3262e;border-color:#b3262e;color:#fff;}
-label.btn.leader:hover{background:#c9323a;border-color:#c9323a;}
 .thumbs{display:flex;gap:10px;overflow-x:auto;padding:4px 2px 10px;scrollbar-width:thin;}
 .thumb{position:relative;flex:0 0 auto;width:58px;height:81px;border-radius:8px;overflow:hidden;
   border:2px solid var(--line);cursor:pointer;background:var(--panel);}
@@ -192,8 +189,6 @@ body.obs .stage{width:auto;height:82vh;}
 .side-title{font-size:0.95rem;font-weight:700;margin:0;padding:18px 16px 4px;}
 .side-title span{color:var(--ink-dim);font-weight:400;font-size:0.8rem;}
 .sidebar .deck-panel{max-width:none;padding:10px 16px 0;flex:1;}
-.sidebar .add-row{flex-direction:column;align-items:stretch;}
-.sidebar .add-row label.btn{text-align:center;}
 .sidebar .sel-bar{justify-content:flex-start;}
 .sidebar .thumbs{display:grid;grid-template-columns:repeat(auto-fill,minmax(72px,1fr));gap:10px;overflow:visible;padding:4px 0 12px;}
 .sidebar .thumb{width:auto;height:auto;aspect-ratio:63/88;}
@@ -215,7 +210,6 @@ body.obs .stage{width:auto;height:82vh;}
 .placeholder .glyph .ico{width:1em;height:1em;margin:0 auto;}
 button,label.btn{transition:border-color .15s ease,background .15s ease,transform .12s cubic-bezier(0.16,1,0.3,1);}
 button:active,label.btn:active{transform:translateY(1px) scale(0.98);}
-label.btn.leader{color:#fdf1ef;}
 .thumb.skeleton{border-color:var(--line);background:var(--panel);position:relative;cursor:default;}
 .thumb.skeleton::before{content:'';position:absolute;inset:0;background:linear-gradient(100deg,transparent 20%,rgba(255,255,255,0.07) 50%,transparent 80%);transform:translateX(-100%);animation:skel 1.3s ease-in-out infinite;}
 @keyframes skel{to{transform:translateX(100%);}}
@@ -279,7 +273,6 @@ label.btn.leader{color:#fdf1ef;}
   .holo-picker button{padding:7px 11px;}
   .sidebar{height:auto;min-height:0;}
   .side-title{text-align:center;}
-  .sidebar .add-row{max-width:420px;margin-inline:auto;}
   .sidebar .sel-bar{justify-content:center;}
   .set-picker{max-width:452px;margin-inline:auto;width:100%;}
   .view-opts{max-width:420px;margin-inline:auto;}
