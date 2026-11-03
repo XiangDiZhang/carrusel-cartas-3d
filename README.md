@@ -8,7 +8,7 @@ En línea: https://xiangdizhang.github.io/carrusel-cartas-3d/
 - `index.html`: la página.
 - `css/estilos.css`: todos los estilos.
 - `js/consulta.js`: las consultas (expansiones, cartas, precios y cambio $ → €).
-- `js/app.js`: el carrusel (animación, miniaturas, selector, exportar para OBS).
+- `js/app.js`: el carrusel (animación, miniaturas, selector, enlace para OBS).
 - `assets/reversos/`: reversos por defecto (One Piece normal y líder, Pokémon).
 - `herramientas/actualizar-datos.ps1`: descarga de TCGCSV los datos de TCGplayer.
 - `.github/workflows/datos.yml`: tarea diaria que ejecuta lo anterior y lo publica en la rama `datos`.
@@ -34,6 +34,13 @@ Se consultan la lista de expansiones del juego, el fichero de la expansión eleg
 
 Genera los datos con `herramientas\actualizar-datos.ps1 -salida datos` (con `-soloGrupos 24820,23651` o `-maxExpansiones 5` para ir rápido) y sirve la carpeta por HTTP en `localhost`: en local la página lee `datos/` en vez de la rama `datos`.
 
-## Exportar para OBS
+## Enlace para OBS
 
-Genera `cartas-obs.html`, un archivo único con el CSS, el código y los reversos metidos dentro; las imágenes de las cartas de las expansiones se cargan de internet.
+El botón «Enlace para OBS» crea y copia un enlace a esta misma página con la configuración actual, por ejemplo:
+
+`https://xiangdizhang.github.io/carrusel-cartas-3d/?obs=1&juego=pkm&exp=24722&n=5&brillo=oro&int=35&moneda=USD`
+
+- `obs=1`: solo la carta y su precio, con fondo transparente.
+- `juego` (`op` o `pkm`), `exp` (código de la expansión), `n` (1 a 50 cartas), `brillo`, `int` (0 a 300) y `moneda` (`EUR` o `USD`).
+
+En OBS: Fuente → Navegador → pegar el enlace en «URL». Los datos se consultan cada vez que OBS carga la fuente, y la página se recarga sola cada 6 horas. Si la expansión del enlace deja de existir, se abre la más reciente. Los reversos cambiados a mano no viajan en el enlace.

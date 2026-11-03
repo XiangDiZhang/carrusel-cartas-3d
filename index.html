@@ -57,8 +57,9 @@
     <output id="intVal" for="intRange">35%</output>
   </div>
   <div class="obs-row">
-    <button id="obsBtn" disabled>Exportar para OBS</button>
-    <p class="obs-note" id="obsNote">Descarga un archivo con las cartas, el brillo y la intensidad actuales. En OBS: Fuente → Navegador → marca "Archivo local" y elige el archivo.</p>
+    <button id="obsBtn" disabled>Enlace para OBS</button>
+    <input type="text" id="obsLink" class="obs-link" readonly placeholder="Pulsa el botón para crear el enlace" aria-label="Enlace para OBS">
+    <p class="obs-note" id="obsNote">Copia un enlace con el juego, la expansión, el número de cartas, el brillo, la intensidad y la moneda actuales. En OBS: Fuente → Navegador → pega el enlace en «URL». Los precios se consultan cada vez que OBS carga la fuente.</p>
   </div>
   <p class="hint">En pausa puedes arrastrar la carta con el dedo o el ratón para inclinarla tú.</p>
 </div>

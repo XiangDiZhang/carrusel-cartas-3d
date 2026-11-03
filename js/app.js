@@ -1,6 +1,7 @@
 (function(){
-  const TEMPLATE = '<!DOCTYPE html>\n' + document.documentElement.outerHTML;
-  const OBS = window.__OBS__ || null;
+  // ?obs=1: modo OBS (solo la carta, fondo transparente) con la configuración que viene en el enlace
+  const PARAMS = new URLSearchParams(location.search);
+  const OBS = PARAMS.get('obs') === '1';
   // ---- Ajustes ----
   const SHOW_MS = 5000;   // tiempo que se muestra cada carta flotando
   const FLIP_MS = 1900;   // duración de la vuelta completa (lenta y suave)
@@ -26,7 +27,7 @@
   let priceDate = '';           // día en que la fuente tomó esos precios
   let EUR_RATE = 0.8775;        // 1 $ = x €; se sustituye por el cambio del día al cargar
   let rateDate = '';
-  const rateReady = OBS ? Promise.resolve() : Consulta.tipoCambio().then(r=>{ EUR_RATE = r.rate; rateDate = r.date; }).catch(()=>{});
+  const rateReady = Consulta.tipoCambio().then(r=>{ EUR_RATE = r.rate; rateDate = r.date; }).catch(()=>{});
   const MAX_CARDS = 50;
   let currency = 'EUR';
   let limit = 10;
@@ -348,53 +349,26 @@
 
   playBtn.addEventListener('click', ()=> playing ? stopPlaying() : startPlaying());
 
-  // ---- Exportar para OBS ----
+  // ---- Enlace para OBS: esta misma página con la configuración actual; OBS consulta los datos al cargarla ----
   const obsBtn = document.getElementById('obsBtn');
   const obsNote = document.getElementById('obsNote');
-  const fetchText = async url => { const r = await fetch(url); if(!r.ok) throw new Error('HTTP ' + r.status); return r.text(); };
-  async function toDataUrl(url){
-    const r = await fetch(url); if(!r.ok) throw new Error('HTTP ' + r.status);
-    return readFile(await r.blob());
-  }
-  // el archivo de OBS va en una sola pieza: CSS, código y reversos del proyecto van metidos dentro
-  async function buildObsFile(){
-    const backs = new Map();
-    for(const c of cards){
-      if(c.back && !c.back.startsWith('data:') && !backs.has(c.back)) backs.set(c.back, await toDataUrl(c.back));
-    }
-    const data = {
-      holo: card.dataset.holo,
-      int: Number(intRange.value), currency, rate: EUR_RATE,
-      cards: cards.map(c=>({front:c.front, back: backs.get(c.back) || c.back, price: c.price, precios: c.precios}))
-    };
-    const doc = new DOMParser().parseFromString(TEMPLATE, 'text/html');
-    const css = doc.querySelector('link[href^="css/"]');
-    const style = doc.createElement('style');
-    style.textContent = await fetchText(css.getAttribute('href'));
-    css.replaceWith(style);
-    const appTag = doc.getElementById('app');
-    const app = doc.createElement('script');
-    app.id = 'app';
-    app.textContent = (await fetchText(appTag.getAttribute('src'))).replace(/<\/script/gi, '<\\/script');
-    appTag.replaceWith(app);
-    doc.querySelectorAll('script').forEach(sc=>{ if(sc.id!=='app') sc.remove(); });
-    doc.documentElement.classList.add('obs');
-    doc.body.classList.add('obs');
-    const boot = doc.createElement('script');
-    boot.textContent = 'window.__OBS__=' + JSON.stringify(data).replace(/</g,'\\u003c') + ';';
-    app.before(boot);
-    return '<!DOCTYPE html>\n' + doc.documentElement.outerHTML;
+  const obsLink = document.getElementById('obsLink');
+  const isDefaultBack = b => !b || b === BACK_NORMAL || b === BACK_LEADER || Object.values(GAME_BACKS).includes(b);
+  function obsUrl(){
+    const p = new URLSearchParams({obs: '1', juego: game, exp: activeSet, n: String(limit), brillo: card.dataset.holo, int: intRange.value, moneda: currency});
+    return location.origin + location.pathname + '?' + p;
   }
   obsBtn.addEventListener('click', async ()=>{
-    if(!cards.length) return;
-    let html;
-    try{ html = await buildObsFile(); }
-    catch(err){ obsNote.textContent = 'No se pudo preparar el archivo (' + (err && err.message || err) + '). Inténtalo de nuevo.'; return; }
-    const url = URL.createObjectURL(new Blob([html], {type:'text/html'}));
-    const a = document.createElement('a');
-    a.href = url; a.download = 'cartas-obs.html';
-    document.body.appendChild(a); a.click(); a.remove();
-    setTimeout(()=>URL.revokeObjectURL(url), 2000);
+    if(!activeSet) return;
+    const url = obsUrl();
+    obsLink.value = url;
+    obsLink.focus(); obsLink.select();
+    const note = copied => obsNote.textContent = (copied ? 'Enlace copiado. ' : 'Copia el enlace. ') +
+      'En OBS: Fuente → Navegador → pégalo en «URL» (por ejemplo, 1080 × 1080).' +
+      (cards.some(c=>!isDefaultBack(c.back)) ? ' Los reversos que hayas cambiado no van en el enlace: en OBS salen los de por defecto.' : '');
+    note(false);
+    // el portapapeles puede no contestar nunca (permisos): no se le espera para dar las instrucciones
+    try{ await Promise.race([navigator.clipboard.writeText(url), new Promise((_, no)=>setTimeout(no, 2000))]); note(true); }catch(err){}
   });
 
   // ---- Selector de expansión ----
@@ -508,7 +482,6 @@
   }
   gameSelect.addEventListener('change', ()=>loadGame(gameSelect.value, true));
   setSelect.addEventListener('change', ()=>selectSet(setSelect.value));
-  if(!OBS) loadGame('op', true);
 
   // ---- Moneda ----
   const curSeg = document.getElementById('curSeg');
@@ -544,7 +517,6 @@
   }
   limitCustom.addEventListener('change', applyCustom);
   limitCustom.addEventListener('keydown', e=>{ if(e.key === 'Enter'){ e.preventDefault(); applyCustom(); } });
-  if(OBS) setSelect.closest('.set-picker').style.display = 'none';
 
   // arrastre manual en pausa
   let dragging=false, sx=0, sy=0;
@@ -578,13 +550,18 @@
   if(OBS){
     document.documentElement.classList.add('obs');
     document.body.classList.add('obs');
-    if(OBS.currency) currency = OBS.currency;
-    if(OBS.rate) EUR_RATE = OBS.rate;
-    cards = OBS.cards.map(c=>({front:c.front, back: c.back, price: c.price, precios: c.precios}));
-    card.dataset.holo = OBS.holo || 'arcoiris';
-    card.style.setProperty('--int', ((OBS.int ?? 100)/100).toFixed(2));
-    current = 0;
-    setFaces(0,0);
-    if(cards.length) startPlaying();
-  }
+    const g = GAME_NAMES[PARAMS.get('juego')] ? PARAMS.get('juego') : 'op';
+    if(PARAMS.get('moneda') === 'USD') currency = 'USD';
+    const n = Number(PARAMS.get('n')); if(n >= 1) limit = Math.min(MAX_CARDS, Math.round(n));
+    if(PARAMS.has('brillo')) setHolo(PARAMS.get('brillo'));
+    if(PARAMS.has('int')) setIntensity(Math.max(0, Math.min(300, Number(PARAMS.get('int')) || 0)));
+    gameSelect.value = g;
+    // si la expansión del enlace ya no existe, se abre la más reciente
+    loadGame(g, false).then(()=>{
+      const exp = PARAMS.get('exp');
+      if(exp && gameSets(g).some(x=>x.code === exp)) selectSet(exp); else loadGame(g, true);
+    });
+    // se vuelve a cargar cada 6 horas para coger los precios nuevos sin tocar OBS
+    setTimeout(()=>location.reload(), 6 * 3600 * 1000);
+  } else loadGame('op', true);
 })();
